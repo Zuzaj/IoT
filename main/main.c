@@ -21,9 +21,7 @@
 #define WIFI_SSID      "iPhone (Zuzanna)"
 #define WIFI_PASS      "lubiesernik123"
 #define WIFI_CONNECTED_BIT BIT0
-#define BUFFER_SIZE 1024
-#define MAX_HTTP_RECV_BUFFER 512
-#define MAX_HTTP_OUTPUT_BUFFER 2048
+
 // led
 #define LED_PIN GPIO_NUM_2
 
@@ -95,7 +93,6 @@ void blink_led(void *pvParameters) {
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {   
-    static char *output_buffer;  // Buffer to store response of http request from event handler
     switch(evt->event_id) {
         case HTTP_EVENT_ERROR:
             ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
@@ -114,12 +111,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             break;
         case HTTP_EVENT_ON_FINISH:
             ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
-            if (output_buffer != NULL) {
-                // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
-                // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
-                free(output_buffer);
-                output_buffer = NULL;
-            }
             break;
         case HTTP_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
@@ -129,10 +120,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                 ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
                 ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
             }
-            if (output_buffer != NULL) {
-                free(output_buffer);
-                output_buffer = NULL;
-            }
             break;
     }
     return ESP_OK;
@@ -140,7 +127,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
 
 static void http_rest_with_hostname_path(void) {
-    char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
+    char local_response_buffer[2048] = {0};
 
     esp_http_client_config_t config = {
             .url = "http://worldclockapi.com/api/json/est/now",
@@ -179,7 +166,6 @@ static void http_get_task(void *pvParameters) {
 void app_main(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
     wifi_connect_station();
-    // Start LED Task
     xTaskCreate(blink_led, "LED Task", 1024, NULL, 1, NULL);
     xTaskCreate(&http_get_task, "http_get_task", 8192, NULL, 5, NULL);
     }
