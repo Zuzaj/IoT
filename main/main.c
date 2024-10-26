@@ -146,7 +146,6 @@ static void http_rest_with_hostname_path(void) {
             .url = "http://worldclockapi.com/api/json/est/now",
             .method = HTTP_METHOD_GET,
             .cert_pem = NULL,
-            .skip_cert_common_name_check = true,
             .event_handler = _http_event_handler,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
